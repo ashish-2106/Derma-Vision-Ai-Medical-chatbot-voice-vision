@@ -1,42 +1,42 @@
 import os
 import base64
 from groq import Groq
+from dotenv import load_dotenv  # Import dotenv to load .env file
 
-# Setup Groq API Key
-GROQ_API_KEY = os.environ.get('GROQ_API_KEY')
+# Load environment variables from .env file
+load_dotenv()
 
-# Convert image to base64
-image_path = "acne.jpeg"
-with open(image_path, "rb") as image_file:
-    encoded_image = base64.b64encode(image_file.read()).decode('utf-8')
+# Get API key from environment variables
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+if not GROQ_API_KEY:
+    raise ValueError("GROQ_API_KEY not found in environment variables.")
+
+def encode_image(image_path):
+    """Encodes an image to base64 format."""
+    with open(image_path, "rb") as image_file:
+        return base64.b64encode(image_file.read()).decode("utf-8")
 
 # Setup multimodal LLM
-client = Groq(api_key=GROQ_API_KEY)
+def analyze_image_with_query(query, model, encoded_image):
+    """Analyzes an image using Groq API with a given query and model."""
+    client = Groq(api_key=GROQ_API_KEY)
+    
+    messages = [
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": query},
+                {
+                    "type": "image_url",
+                    "image_url": {"url": f"data:image/jpeg;base64,{encoded_image}"},
+                },
+            ],
+        }
+    ]
 
-query = "Is there something wrong with my face?"
-model = "llama-3.2-90b-vision-preview"
-
-messages = [
-    {
-        "role": "user",
-        "content": [
-            {
-                "type": "text",
-                "text": query
-            },
-            {
-                "type": "image_url",
-                "image_url": {"url": f"data:image/jpeg;base64,{encoded_image}"}
-            }
-        ]
-    }
-]
-
-# Making the API request
-chat_completion = client.chat.completions.create(
-    messages=messages,
-    model=model
-)
-
-# Print response
-print(chat_completion.choices[0].message.content)
+    chat_completion = client.chat.completions.create(
+        messages=messages,
+        model=model
+    )
+                
+    return chat_completion.choices[0].message.content

@@ -1,65 +1,77 @@
-# if you dont use pipenv uncomment the following:
-# from dotenv import load_dotenv
-# load_dotenv()
-
-#Step1: Setup Audio recorder (ffmpeg & portaudio)
-# ffmpeg, portaudio, pyaudio
+import os
 import logging
 import speech_recognition as sr
 from pydub import AudioSegment
 from io import BytesIO
+from groq import Groq
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
-def record_audio(file_path, timeout=20, phrase_time_limit=None):
-    """
-    Simplified function to record audio from the microphone and save it as an MP3 file.
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
+stt_model = "whisper-large-v3"
+audio_filepath = "test_audio.mp3"
 
-    Args:
-    file_path (str): Path to save the recorded audio file.
-    timeout (int): Maximum time to wait for a phrase to start (in seconds).
-    phrase_time_lfimit (int): Maximum time for the phrase to be recorded (in seconds).
-    """
+def record_audio(file_path, timeout=10, phrase_time_limit=5):
     recognizer = sr.Recognizer()
-    
+
     try:
         with sr.Microphone() as source:
             logging.info("Adjusting for ambient noise...")
             recognizer.adjust_for_ambient_noise(source, duration=1)
             logging.info("Start speaking now...")
-            
-            # Record the audio
+
+            # Record audio
             audio_data = recognizer.listen(source, timeout=timeout, phrase_time_limit=phrase_time_limit)
             logging.info("Recording complete.")
-            
-            # Convert the recorded audio to an MP3 file
+
+            # Convert to MP3
             wav_data = audio_data.get_wav_data()
+            logging.info("Converting to MP3...")
             audio_segment = AudioSegment.from_wav(BytesIO(wav_data))
             audio_segment.export(file_path, format="mp3", bitrate="128k")
-            
             logging.info(f"Audio saved to {file_path}")
 
+            # Verify file exists
+            if os.path.exists(file_path):
+                logging.info("Audio file successfully created!")
+            else:
+                logging.error("Failed to save audio file!")
+
     except Exception as e:
-        logging.error(f"An error occurred: {e}")
-record_audio(file_path="patient_voice_test_for_patient.mp3")
-# audio_filepath="patient_voice_test_for_patient.mp3"
-#record_audio(file_path=audio_filepath)
+        logging.error(f"An error occurred in record_audio: {e}")
 
-#Step2: Setup Speech to text–STT–model for transcription
-# import os
-# from groq import Groq
+def transcribe_with_groq(stt_model, audio_filepath):
+    if not GROQ_API_KEY:
+        logging.error("GROQ_API_KEY is missing.")
+        return None
 
-# GROQ_API_KEY=os.environ.get("GROQ_API_KEY")
-# stt_model="whisper-large-v3"
+    client = Groq(api_key=GROQ_API_KEY)
 
-# def transcribe_with_groq(stt_model, audio_filepath, GROQ_API_KEY):
-#     client=Groq(api_key=GROQ_API_KEY)
+    try:
+        with open(audio_filepath, "rb") as audio_file:
+            logging.info("Sending file for transcription...")
+            transcription = client.audio.transcriptions.create(
+                model=stt_model,
+                file=audio_file,
+                language="en"
+            )
+        
+        logging.info("Transcription received successfully!")
+        print("Transcription:", transcription.text)
+        return transcription.text
+
+    except Exception as e:
+        logging.error(f"Error in transcription: {e}")
+        return None
+
+if __name__ == "__main__":
+    logging.info("Starting voice recording...")
+    record_audio(audio_filepath)
     
-#     audio_file=open(audio_filepath, "rb")
-#     transcription=client.audio.transcriptions.create(
-#         model=stt_model,
-#         file=audio_file,
-#         language="en"
-#     )
-
-#     return transcription.text
+    if os.path.exists(audio_filepath):
+        logging.info("Starting transcription...")
+        transcript = transcribe_with_groq(stt_model, audio_filepath)
+        if transcript:
+            logging.info("Transcription completed successfully!")
+    else:
+        logging.error("Audio file missing, skipping transcription.")
