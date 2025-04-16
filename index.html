@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Derma Vision - Login</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600&display=swap');
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Outfit', sans-serif;
+    }
+
+    body {
+      background: #0c0c0c;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .glass-card {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(16px);
+      border-radius: 20px;
+      padding: 40px 30px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+      width: 400px;
+      text-align: center;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #ffffff;
+      animation: fadeSlideIn 0.7s ease forwards;
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    @keyframes fadeSlideIn {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .glass-card h1 {
+      margin-bottom: 30px;
+      font-size: 28px;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 16px;
+      border: none;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      font-size: 16px;
+      outline: none;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    input::placeholder {
+      color: #bbb;
+    }
+
+    .button-group {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 10px;
+    }
+
+    button {
+      width: 48%;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      background: linear-gradient(145deg, #ea580c);
+      color: white;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    button:hover {
+      transform: scale(1.05);
+      background-color: #00b59c;
+    }
+
+    .forgot-link {
+      display: block;
+      margin-top: 10px;
+      font-size: 14px;
+      color: #ea580c;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
+    @media screen and (max-width: 480px) {
+      .glass-card {
+        width: 90%;
+      }
+
+      .button-group {
+        flex-direction: column;
+      }
+
+      .button-group button {
+        width: 100%;
+        margin-bottom: 10px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="glass-card">
+    <h1>🧑‍⚕️ Derma Vision Login</h1>
+    <input type="email" id="email" placeholder="📧 Email">
+    <input type="password" id="password" placeholder="🔒 Password">
+    <div class="button-group">
+      <button id="loginBtn">Login</button>
+      <button id="signupBtn">Sign Up</button>
+    </div>
+    <span class="forgot-link" onclick="resetPassword()">Forgot Password?</span>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+    import {
+      getAuth,
+      createUserWithEmailAndPassword,
+      signInWithEmailAndPassword,
+      sendPasswordResetEmail
+    } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
+    
+    import { firebaseConfig } from './firebaseConfig.js';
+
+  
+
+
+
+     const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    document.getElementById("signupBtn").addEventListener("click", () => {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+
+      createUserWithEmailAndPassword(auth, email, password)
+        .then(() => {
+          window.location.href = "http://127.0.0.1:7860/";
+        })
+        .catch(error => {
+          alert("❌ " + error.message);
+        });
+    });
+
+    document.getElementById("loginBtn").addEventListener("click", () => {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+
+      signInWithEmailAndPassword(auth, email, password)
+        .then(() => {
+          window.location.href = "http://127.0.0.1:7860/";
+        })
+        .catch(error => {
+          alert("❌ " + error.message);
+        });
+    });
+
+    window.resetPassword = () => {
+      const email = document.getElementById("email").value;
+
+      if (!email) {
+        alert("⚠️ Please enter your email before resetting your password.");
+        return;
+      }
+
+      sendPasswordResetEmail(auth, email)
+        .then(() => {
+          alert("📩 Password reset email sent!");
+        })
+        .catch(error => {
+          alert("❌ " + error.message);
+        });
+    };
+  </script>
+</body>
+
+</html>
