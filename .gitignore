@@ -1,1 +1,4 @@
 firebaseConfig.js
+# Ignore session JSON and transcript files
+session_*.json
+session_*_transcript*
